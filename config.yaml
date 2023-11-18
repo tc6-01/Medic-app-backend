@@ -1,0 +1,7 @@
+# config.yaml
+database:
+  username: root
+  password: DOIFJNA23#
+  host: 121.5.73.12
+  port: 3344
+  dbname: yiliao
