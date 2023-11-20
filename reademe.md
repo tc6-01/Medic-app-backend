@@ -81,7 +81,7 @@ CREATE TABLE `user_strategy` (
             "strategyName": "accessCountLimit",
             "strategyDesc": "限制使用次数",
             "accessCountLimit": 10,
-            "is_allow": 1    
+            "is_allow": 1  
         }
     ]
 }  
@@ -90,6 +90,7 @@ CREATE TABLE `user_strategy` (
 ### 2. 用户管理
 
 用户表设计
+
 ```
 表名：user
 user_id : bigint unsigned 用户ID 自增主键
@@ -104,6 +105,7 @@ gmt_modified : datetime # 更新时间 默认为当前时间
 ```
 
 建表语句
+
 ```SQL
 # 创建user表并在创建语句中添加注释并且添加默认值
 CREATE TABLE `user` (
@@ -121,32 +123,72 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 ```
 
-### 文件管理
+### 3.文件管理
 
+文件表设计
+```
+表名：share_files
+file_id : bigint unsigned 文件ID 自增主键
+file_name : char(100) # 文件名称
+file_size : int unsigned # 文件大小
+owner_id : bigint unsigned # 拥有者用户ID 
+target_user_id : bigint unsigned # 目标用户ID
+use_count : int unsigned # 文件使用次数
+useLimit : int unsigned # 文件使用限制次数
+is_delete : tinyint unsigned 是否注销 0 未删除 1 已删除 默认为0
+gmt_create: datetime # 上传时间 默认为当前时间
+gmt_modified : datetime # 更新时间 默认为当前时间
+```
+
+建表语句
+
+```SQL
+# 创建share_files表并在创建语句中添加注释并且添加默认值 
+CREATE TABLE `share_files`(
+  `file_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '文件ID 自增主键',
+  `file_name` char(100) NOT NULL  COMMENT '文件名称',
+  `file_size` int unsigned NOT NULL COMMENT '文件大小',
+  `owner_id` bigint unsigned NOT NULL  COMMENT '拥有者用户ID',
+  `target_user_id` bigint unsigned NOT NULL  COMMENT '目标用户ID',
+  `use_count` int unsigned NOT NULL DEFAULT 0 COMMENT '文件使用次数',
+  `useLimit` int unsigned NOT NULL DEFAULT 0 COMMENT '文件使用限制次数',
+  `is_delete` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否注销 0 未删除 1 已删除 默认为0',
+  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间 默认为当前时间',
+  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认为当前时间',
+  PRIMARY KEY (`file_id`),
+  UNIQUE KEY `file_name` (`file_name`),
+  KEY `owner_id` (`owner_id`),
+  KEY `target_user_id` (`target_user_id`)
+)ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='共享文件表';
+```
 
 ## 开发日志记录
+
 11/18 ：
+
 - 数据库表设计，完善需求分析
-    - 用户表 + 用户策略表重构
+
+  - 用户表 + 用户策略表重构
 - 代码处理部分进行微重构
-    - 重构代码，完善异常处理
 
+  - 重构代码，完善异常处理
 - 编写用户注册模块 + 微重构用户登录模块
-    - 用户注册模块
-        - 用户名唯一性校验
-        - 密码加密
-        - 用户注册
-    - 用户登录模块微重构
-        - JWT中存放加密后的用户对象，方便在后续过程中获取公钥与用户ID
-        - 用户登录时，将用户对象加密后存入JWT中
-        - 用户登录
 
-11/19：
+  - 用户注册模块
+    - 用户名唯一性校验
+    - 密码加密
+    - 用户注册
+  - 用户登录模块微重构
+    - JWT中存放加密后的用户对象，方便在后续过程中获取公钥与用户ID
+    - 用户登录时，将用户对象加密后存入JWT中
+    - 用户登录
+
+11/20：
+
 - 编写用户策略模块
-    - 用户创建新策略
-    - 用户删除策略 
-    - 用户修改策略
-    - 用户分享文件时获取自身创建策略
-    - 管理员查看用户策略
-
+  - 用户创建新策略
+  - 用户删除策略
+  - 用户修改策略
+  - 用户分享文件时获取自身创建策略
+  - 管理员查看用户策略
 - 数据库表设计 + 文件管理需求分析

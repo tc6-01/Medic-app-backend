@@ -12,7 +12,7 @@ type User struct {
 	UserId    int64  `json:"userId"`
 	Username  string `json:"username"`
 	Role      int    `json:"role"`
-	PublicKey string `json:"publishKey"`
+	PublicKey string `json:"publicKey"`
 }
 type FileListElement struct {
 	Expire    int64  `json:"expire"`
@@ -21,4 +21,18 @@ type FileListElement struct {
 	Owner     string `json:"owner"`
 	Use_count int64  `json:"use"`
 	UseLimit  int64  `json:"useLimit"`
+}
+type ShareFile struct {
+	Expire    int64  `json:"expire"`
+	FileName  string `json:"fileName"`
+	Target    string `json:"target"`
+	Use_count int64  `json:"use"`
+	UseLimit  int64  `json:"useLimit"`
+	IsGroup   int64  `json:"isGroup"'`
+	FileSize  int64  `json:"fileSize"`
+}
+type Stragety struct {
+	Name  string `json:"sname"`
+	Desc  string `json:"descrption"`
+	Rules string `json:"rules"`
 }

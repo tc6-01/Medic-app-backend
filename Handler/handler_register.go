@@ -39,11 +39,15 @@ func RegitserHandler(db *sql.DB) gin.HandlerFunc {
 			handleError(c, "register error", "username length must be less than 16")
 			return
 		}
-		if len(requestBody.Password) < 8 {
+		if len(requestBody.Password) < 6 {
 			handleError(c, "register error", "password length must be greater than 8")
 			return
 		}
-
+		err := RegisterUser(db, requestBody.Username, requestBody.Password)
+		if err != nil {
+			handleError(c, err.Error(), "Register Failed")
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{"code": "200", "msg": "Register Successfully"})
 	}
 }

@@ -3,19 +3,10 @@ package Handler
 import (
 	"database/sql"
 	"net/http"
+	"yiliao/Dao"
 
 	"github.com/gin-gonic/gin"
 )
-
-type ShareFile struct {
-	Expire    int64  `json:"expire"`
-	FileName  string `json:"fileName"`
-	Target    string `json:"target"`
-	Use_count int64  `json:"use"`
-	UseLimit  int64  `json:"useLimit"`
-	IsGroup   int64  `json:"isGroup"'`
-	FileSize  int64  `json:"fileSize"`
-}
 
 // 获取当前用户共享的所有文件
 func GetShareHandler(db *sql.DB) gin.HandlerFunc {
@@ -40,7 +31,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 		defer rows.Close()
 
 		// 创建一个切片来存储共享文件的信息
-		var sharedFiles []ShareFile
+		var sharedFiles []Dao.ShareFile
 
 		// 遍历查询结果并填充 sharedFiles 切片
 		for rows.Next() {
@@ -61,7 +52,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 			}
 
 			// 创建共享文件对象并填充数据
-			sharedFile := ShareFile{
+			sharedFile := Dao.ShareFile{
 				Expire:    expire,
 				FileName:  fileName,
 				Target:    target,

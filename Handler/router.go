@@ -1,10 +1,11 @@
 package Handler
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 	"yiliao/Utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RouterAuth(c *gin.Context) {
@@ -42,7 +43,7 @@ func RouterAuth(c *gin.Context) {
 		return
 	}
 
-	c.Set("user", user.Username) // 存储用户信息到上下文
+	c.Set("user", user) // 存储用户信息到上下文
 
 	c.Next() // 继续请求处理
 }
