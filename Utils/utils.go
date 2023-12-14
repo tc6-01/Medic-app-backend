@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 	"yiliao/Dao"
 
@@ -57,7 +58,8 @@ func CreateToken(user Dao.User) string {
 		将用户对象封装成Json字符串
 		使用Base64Url编码进行加密
 	*/
-	userObj := Base64UrlEncode(ToJson(user))
+	userObj := ToJson(user)
+	log.Println("userObj is :", userObj)
 	claims := &jwt.StandardClaims{
 		ExpiresAt: expirationTime.Unix(),
 		Issuer:    "your-issuer", // 可以自定义
@@ -69,10 +71,10 @@ func CreateToken(user Dao.User) string {
 	// 使用密钥签名JWT令牌
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
-	fmt.Println("create Token :", tokenString)
+	log.Println("create Token :", tokenString)
 	return tokenString
 }
 

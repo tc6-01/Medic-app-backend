@@ -36,18 +36,11 @@ CREATE TABLE `user_strategy` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户策略表';
 ```
 
-策略规则描述：
+策略规则描述（使用Json字符串进行记录，避免创建过多字段）：
 
 ```json
 {
     "strategyRule": [
-        # 限制访问账号
-        {
-            "strategyName": "limitAccount",
-            "strategyDesc": "限制访问账号",
-            "is_allow": 1,
-            "account": ["admin"],
-        },
         # 设备URL  
         {
             "strategyName": "deviceUrl",
@@ -86,6 +79,9 @@ CREATE TABLE `user_strategy` (
     ]
 }  
 ```
+共享策略模块设计：
+- 用户创建共享策略
+- 用户查看自己的所有以创建的共享策略
 
 ### 2. 用户管理
 
@@ -122,19 +118,23 @@ CREATE TABLE `user` (
   UNIQUE KEY `user_name` (`user_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 ```
+用户模块功能设计：
+- 用户注册
+- 用户登录
+- 密钥（扩充用户分享链）
+  - 重新生成公钥与私钥
 
-### 3.文件管理
+### 3.病例管理
 
-文件表设计
+病例表设计
 ```
 表名：share_files
-file_id : bigint unsigned 文件ID 自增主键
-file_name : char(100) # 文件名称
-file_size : int unsigned # 文件大小
+file_id : bigint unsigned 病例ID 自增主键
+file_name : char(100) # 病例名称
+file_size : int unsigned # 病例大小
 owner_id : bigint unsigned # 拥有者用户ID 
 target_user_id : bigint unsigned # 目标用户ID
-use_count : int unsigned # 文件使用次数
-useLimit : int unsigned # 文件使用限制次数
+share_stragety_id : bigint unsigned # 分享策略ID  
 is_delete : tinyint unsigned 是否注销 0 未删除 1 已删除 默认为0
 gmt_create: datetime # 上传时间 默认为当前时间
 gmt_modified : datetime # 更新时间 默认为当前时间
@@ -145,13 +145,12 @@ gmt_modified : datetime # 更新时间 默认为当前时间
 ```SQL
 # 创建share_files表并在创建语句中添加注释并且添加默认值 
 CREATE TABLE `share_files`(
-  `file_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '文件ID 自增主键',
-  `file_name` char(100) NOT NULL  COMMENT '文件名称',
-  `file_size` int unsigned NOT NULL COMMENT '文件大小',
+  `file_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '病例ID 自增主键',
+  `file_name` char(100) NOT NULL  COMMENT '病例名称',
+  `file_size` int unsigned NOT NULL COMMENT '病例大小',
   `owner_id` bigint unsigned NOT NULL  COMMENT '拥有者用户ID',
   `target_user_id` bigint unsigned NOT NULL  COMMENT '目标用户ID',
-  `use_count` int unsigned NOT NULL DEFAULT 0 COMMENT '文件使用次数',
-  `useLimit` int unsigned NOT NULL DEFAULT 0 COMMENT '文件使用限制次数',
+  `share_stragety_id` bigint unsigned NOT NULL  COMMENT '分享策略ID',
   `is_delete` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否注销 0 未删除 1 已删除 默认为0',
   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间 默认为当前时间',
   `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认为当前时间',
@@ -159,8 +158,20 @@ CREATE TABLE `share_files`(
   UNIQUE KEY `file_name` (`file_name`),
   KEY `owner_id` (`owner_id`),
   KEY `target_user_id` (`target_user_id`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='共享文件表';
+)ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='共享病例表';
 ```
+
+病例（上传）共享模块设计：
+- 上传病例（初次共享）
+  - 首先上传病例，然后选择分享策略，并使用该策略进行共享
+- 共享病例（二次共享）
+  - 可以将自己的共享病例进行二次共享（自动创建最新策略与原有共享策略结合的新共享策略，并使用该策略进行共享）
+
+获取当前用户的共享病例列表：
+- 用户登录后，获取当前用户的共享病例列表
+
+获取当前用户分享的病例列表：
+- 用户登录后，获取当前用户分享的病例列表
 
 ## 开发日志记录
 
@@ -189,6 +200,35 @@ CREATE TABLE `share_files`(
   - 用户创建新策略
   - 用户删除策略
   - 用户修改策略
-  - 用户分享文件时获取自身创建策略
+  - 用户分享病例时获取自身创建策略
   - 管理员查看用户策略
-- 数据库表设计 + 文件管理需求分析
+- 数据库表设计 + 病例管理需求分析
+
+12/14
+- 首次前后端联调，实现用户注册与登录模块，初步完善最初设计
+
+
+## TODO
+**接口开发任务**
+
+- [ ] 用户模块
+  - [x] 用户表设计
+  - [x] 用户注册
+  - [x] 用户登录
+    - [x] 使用jwt记录登录态
+    - [x] 验证token作为登录条件
+  - [ ] 用户密钥更新
+- [ ] 策略模块
+  - [x] 共享策略设计
+    - [x] 使用Json字符串存储共享规则
+    - [x] 关联用户与共享策略
+  - [x] 共享策略创建
+  - [x] 查看当前用户的共享策略
+  - [x] 共享策略修改
+- [ ] 病例模块
+  - [x] 病例表设计
+  - [ ] 病例初次共享
+    - [ ] 使用用户公钥进行加密
+  - [ ] 病例二次共享
+    - [ ] 创建新策略，符合当前用户创建的共享策略与病例原有者的共享策略
+    - [ ] 使用当前用户公钥进行二次加密

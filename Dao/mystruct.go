@@ -10,7 +10,7 @@ type User struct {
 		PublishKey: 用户公钥
 	*/
 	UserId    int64  `json:"userId"`
-	Username  string `json:"username"`
+	Username  string `json:"userName"`
 	Role      int    `json:"role"`
 	PublicKey string `json:"publicKey"`
 }

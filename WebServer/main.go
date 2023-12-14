@@ -45,13 +45,15 @@ func main() {
 	dbConfig := viper.Sub("database")
 	db, err := Database.ConnectToDatabase(dbConfig.GetString("username"), dbConfig.GetString("password"), dbConfig.GetString("host"), dbConfig.GetInt("port"), dbConfig.GetString("dbname"))
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("数据库连接错误", err)
 		return
 	}
 	defer db.Close()
 	//开启服务
 	//登录
-	r.POST("/login", Handler.LoginHandler(db))
+	r.POST("/user/login", Handler.LoginHandler(db))
+	// 注册
+	r.POST("/user/register", Handler.RegitserHandler(db))
 	//获取所有用户
 	r.GET("/user", Handler.GetUsersHandler(db))
 	// 创建策略

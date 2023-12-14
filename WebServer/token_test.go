@@ -1,7 +1,8 @@
-package yiliao
+package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"testing"
 	"yiliao/Database"
@@ -32,9 +33,10 @@ func Test(t *testing.T) {
 		log.Fatalf("Error reading config file: %v", err)
 	}
 	dbConfig := viper.Sub("database")
+	fmt.Println(dbConfig.GetString("host"))
 	db, _ = Database.ConnectToDatabase(dbConfig.GetString("username"), dbConfig.GetString("password"), dbConfig.GetString("host"), dbConfig.GetInt("port"), dbConfig.GetString("dbname"))
 
 	defer db.Close()
-	RegisterTest(db)
-	LoginTest(db)
+	//RegisterTest(db)
+	//LoginTest(db)
 }

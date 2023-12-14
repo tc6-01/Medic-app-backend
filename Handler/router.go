@@ -1,6 +1,7 @@
 package Handler
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"yiliao/Utils"
@@ -11,9 +12,9 @@ import (
 func RouterAuth(c *gin.Context) {
 	// 获取路由路径
 	path := c.FullPath()
-
+	log.Println(path)
 	// 如果路由是登录路径，则不执行验证
-	if path == "/login" {
+	if path == "/user/login" || path == "/user/register" {
 		c.Next()
 		return
 	}
