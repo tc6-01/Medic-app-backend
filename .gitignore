@@ -1,0 +1,20 @@
+# 忽略所有上传文件
+*.pdf
+
+# 忽略上传目录下的文件 与build文件
+WebServer/files/
+WebServer/build/
+# 忽略IDE
+.vscode/
+
+# 忽略.git
+.git/
+
+# 忽略.idea
+.idea/
+
+# 忽略可执行程序
+*.exe
+
+# 忽略打包文件
+*.apk
