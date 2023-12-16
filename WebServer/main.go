@@ -53,7 +53,9 @@ func main() {
 	//登录
 	r.POST("/user/login", Handler.LoginHandler(db))
 	// 注册
-	r.POST("/user/register", Handler.RegitserHandler(db))
+	r.POST("/user/register", Handler.RegisterHandler(db))
+	// 管理员上传病历
+	r.POST("/admin/upload", Handler.UploadFile(db))
 	//获取所有用户
 	r.GET("/user", Handler.GetUsersHandler(db))
 	// 创建策略

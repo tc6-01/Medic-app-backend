@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegitserHandler 处理注册请求
-func RegitserHandler(db *sql.DB) gin.HandlerFunc {
+// RegisterHandler 处理注册请求
+func RegisterHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 接受请求对象
 		var requestBody struct {

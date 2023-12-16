@@ -12,7 +12,8 @@ userId : bigint unsigned 用户ID
 strategyId : bigint unsigned 策略ID 自增主键
 sname  : char(100) # 策略名称
 desc : varchar(200) # 策略描述 
-rules : varchar(1000) 策略规则，json字符串 
+expire : DateTime # 过期时间 默认值为当前时间增加一天
+use_Limit : int  unsigned # 使用次数 默认值为10
 is_delete : tinyint unsigned 是否删除 0 未删除 1 已删除 默认值为0
 gmt_create: datetime # 创建时间 默认值为当前时间
 gmt_modified : datetime # 更新时间 默认值为当前时间
@@ -22,13 +23,14 @@ gmt_modified : datetime # 更新时间 默认值为当前时间
 
 ```SQL
 # 创建user_strategy表并在创建语句中添加注释 并且添加默认值
-CREATE TABLE `user_strategy` (
+CREATE TABLE `user_stragety` (
     `userId` bigint(20) unsigned NOT NULL COMMENT '用户ID',
-    `strategyId` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '策略ID 自增主键',
-    `sname` char(100) NOT NULL COMMENT '策略名称',
+    `stragetyId` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '策略ID 自增主键',
+    `name` char(100) NOT NULL COMMENT '策略名称',
     `desc` varchar(200) NOT NULL COMMENT '策略描述',
-    `rules` varchar(1000) NOT NULL COMMENT '策略规则，json字符串',  
-    `is_delete` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '是否删除 0 未删除 1 已删除',
+    `expire` DATETIME NOT NULL default DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY ) COMMENT '过期时间，默认为当前时间加一天',  
+    `use_limit` int unsigned not null default 10 comment '使用次数 默认值为10',
+    `is_delete` tinyint(3) NOT NULL DEFAULT 0 COMMENT '是否删除 0 未删除 1 已删除',
   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间 默认当前时间',
   `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认当前时间',
     PRIMARY KEY (`strategyId`),
@@ -132,6 +134,7 @@ CREATE TABLE `user` (
 file_id : bigint unsigned 病例ID 自增主键
 file_name : char(100) # 病例名称
 file_size : int unsigned # 病例大小
+use_count : int unsigned # 文件被使用次数 默认为0次
 owner_id : bigint unsigned # 拥有者用户ID 
 target_user_id : bigint unsigned # 目标用户ID
 share_stragety_id : bigint unsigned # 分享策略ID  
@@ -148,6 +151,7 @@ CREATE TABLE `share_files`(
   `file_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '病例ID 自增主键',
   `file_name` char(100) NOT NULL  COMMENT '病例名称',
   `file_size` int unsigned NOT NULL COMMENT '病例大小',
+  `use_count` int unsigned NOT NULL DEFAULT 0 COMMENT '文件被使用次数',
   `owner_id` bigint unsigned NOT NULL  COMMENT '拥有者用户ID',
   `target_user_id` bigint unsigned NOT NULL  COMMENT '目标用户ID',
   `share_stragety_id` bigint unsigned NOT NULL  COMMENT '分享策略ID',
@@ -162,10 +166,11 @@ CREATE TABLE `share_files`(
 ```
 
 病例（上传）共享模块设计：
-- 上传病例（初次共享）
+- 上传病例（初次共享-只能由管理员进行上传）
   - 首先上传病例，然后选择分享策略，并使用该策略进行共享
 - 共享病例（二次共享）
   - 可以将自己的共享病例进行二次共享（自动创建最新策略与原有共享策略结合的新共享策略，并使用该策略进行共享）
+  - 用户在进行共享的时候需要选择已创建的共享策略
 
 获取当前用户的共享病例列表：
 - 用户登录后，获取当前用户的共享病例列表
@@ -206,8 +211,13 @@ CREATE TABLE `share_files`(
 
 12/14
 - 首次前后端联调，实现用户注册与登录模块，初步完善最初设计
+- 增加管理员端 上传文件选项（管理员上传文件之后，用户可以进行共享以及创建相关的策略）
+- 在不改变原有基础上进行扩展，不进行大幅度修改！
+- 后端可以增加接口，前端尽量不要动
 
-
+12/16
+- 完成文件上传与预览功能，可以暂时完成系统的运行，基本框架完成构建
+- 规划后续任务：病历共享，围绕基本框架进行展开
 ## TODO
 **接口开发任务**
 

@@ -43,8 +43,8 @@ func RouterAuth(c *gin.Context) {
 		c.Abort() // 停止请求处理
 		return
 	}
-
-	c.Set("user", user) // 存储用户信息到上下文
-
+	// 记录当前登录态
+	c.Set("user", user)
+	c.Set("isAdmin", user.Role)
 	c.Next() // 继续请求处理
 }

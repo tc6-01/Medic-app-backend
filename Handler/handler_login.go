@@ -27,7 +27,11 @@ func LoginHandler(db *sql.DB) gin.HandlerFunc {
 			handleError(c, err.Error(), "Login failed!")
 			return
 		}
-
-		c.JSON(http.StatusOK, gin.H{"code": "200", "msg": "OK", "data": gin.H{"token": token}})
+		admin, exist := c.Get("isAdmin")
+		if !exist {
+			admin = 0
+		}
+		c.JSON(http.StatusOK, gin.H{"code": "200", "msg": "OK",
+			"data": gin.H{"token": token, "isAdmin": admin}})
 	}
 }

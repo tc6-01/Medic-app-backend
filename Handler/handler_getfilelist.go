@@ -15,15 +15,18 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		// 如果你的用户身份验证逻辑已经在其他地方完成，可以从上下文中获取用户信息
 		user, exists := c.Get("user")
 		if !exists {
-			handleError(c, "Unauthorized", "has token but no user found!")
+			handleError(c, "Unauthorized", "当前用户未登录")
 			return
 		}
 
-		// 查询数据库以获取指定用户的所有 PDF 文件
-		query := "SELECT expire, file_name, file_size, owner, use_count, use_limit FROM file_list WHERE owner = ? UNION SELECT expire, file_name, file_size, owner, use_count, use_limit FROM file_share_list WHERE target = ?"
-		rows, err := db.Query(query, user, user)
+		// 查询数据库以获取指定用户的所有 PDF 文件 并获取该文件对应的病例共享策略
+		query := "select file_name, file_size,use_count,share_stragety_id from share_files where owner_id = ? union" +
+			" select file_name, file_size,use_count,share_stragety_id from share_files where target_user_id = ?"
+		//query := "SELECT expire, file_name, file_size, owner, use_count, use_limit FROM file_list WHERE owner = ? UNION SELECT expire, file_name, file_size, owner, use_count, use_limit FROM file_share_list WHERE target = ?"
+		d := user.(*Dao.User)
+		rows, err := db.Query(query, d.UserId, d.UserId)
 		if err != nil {
-			handleError(c, "DB Error", "querry error !")
+			handleError(c, "DB Error", "query error !")
 			return
 		}
 		defer rows.Close()
@@ -32,11 +35,26 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		var fileList []Dao.FileListElement // 请确保 FileListElement 结构体与数据库表的列对应
 		for rows.Next() {
 			var file Dao.FileListElement
-			err := rows.Scan(&file.Expire, &file.FileName, &file.FileSize, &file.Owner, &file.Use_count, &file.UseLimit)
+			var stragetyId int64
+			err := rows.Scan(&file.FileName, &file.FileSize, &file.Use_count, &stragetyId)
 			if err != nil {
-				handleError(c, "Parser Error", "parser data to sturct error!")
+				handleError(c, "Parser Error", "查询失败")
 				return
 			}
+			query = "select expire, use_limit from user_stragety where stragetyId = ?"
+			stragetyRow, err := db.Query(query, stragetyId)
+			if err != nil {
+				handleError(c, "DB Error", "查询失败")
+				return
+			}
+			if stragetyRow.Next() {
+				err = stragetyRow.Scan(&file.Expire, &file.UseLimit)
+				if err != nil {
+					handleError(c, "Parser Error", "查询失败")
+					return
+				}
+			}
+			file.Owner = d.Username
 			fileList = append(fileList, file)
 		}
 
@@ -47,6 +65,6 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// 返回文件列表
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "Success", "data": fileList})
+		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "Success", "data": fileList})
 	}
 }

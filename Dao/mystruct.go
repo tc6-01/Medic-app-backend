@@ -28,11 +28,24 @@ type ShareFile struct {
 	Target    string `json:"target"`
 	Use_count int64  `json:"use"`
 	UseLimit  int64  `json:"useLimit"`
-	IsGroup   int64  `json:"isGroup"'`
+	IsGroup   int64  `json:"isGroup"`
 	FileSize  int64  `json:"fileSize"`
 }
+type ReceiveFile struct {
+	/*
+		文件类型标准
+		文件名称、文件ID、文件大小、使用次数、文件拥有者ID、文件被共享者ID、共享策略ID
+	*/
+	FileName     string `json:"fileName"`
+	FileSize     string `json:"fileSize"`
+	UseCount     int    `json:"useCount"`
+	OwnerId      int    `json:"ownerId"`
+	TargetUserId int    `json:"targetUserId"`
+	StragetyId   int    `json:"stragetyId"`
+}
 type Stragety struct {
-	Name  string `json:"sname"`
-	Desc  string `json:"descrption"`
-	Rules string `json:"rules"`
+	Name     string `json:"name"`
+	Desc     string `json:"description"`
+	Expire   int64  `json:"expire"`
+	UseLimit int64  `json:"useLimit"`
 }

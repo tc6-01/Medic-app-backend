@@ -5,15 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3bf2fdb5-8dca-4a78-b583-7915d59e37a6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Dao/mystruct.go" beforeDir="false" afterPath="$PROJECT_DIR$/Dao/mystruct.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/handler_downloadfile.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/handler_files.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/handler_getfilelist.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/handler_getfilelist.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Handler/handler_login.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/handler_login.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WebServer/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/WebServer/config.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/handler_register.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/handler_register.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/handler_strategy.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/handler_stragety.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/router.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/router.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Handler/util_handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/Handler/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Utils/utils.go" beforeDir="false" afterPath="$PROJECT_DIR$/Utils/jwt_utils.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/WebServer/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/WebServer/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reademe.md" beforeDir="false" afterPath="$PROJECT_DIR$/reademe.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/token_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/WebServer/token_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,10 +30,10 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 4
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="2ZWZkUbRRgcIRxfUMKKABt1eQ4C" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -38,6 +41,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
@@ -48,9 +52,19 @@
     "git-widget-placeholder": "master",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "D:/code-projects/design_collegue/yiliao/WebServer",
+    "last_opened_file_path": "D:/code-projects/design_collegue/yiliao",
     "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)"
+    "node.js.selected.package.eslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ],
+    "com.intellij.ide.scratch.LRUPopupBuilder$1/SQL Dialect": [
+      "MySQL"
+    ]
   }
 }]]></component>
   <component name="RecentsManager">
@@ -61,13 +75,12 @@
   <component name="RunManager" selected="Go Build.main">
     <configuration name="main" type="GoApplicationRunConfiguration" factoryName="Go Application">
       <module name="yiliao" />
-      <working_directory value="$PROJECT_DIR$/WebServer" />
+      <working_directory value="$PROJECT_DIR$" />
       <kind value="DIRECTORY" />
       <package value="yiliao" />
       <directory value="$PROJECT_DIR$/WebServer" />
       <filePath value="$PROJECT_DIR$/../yiliao|$PROJECT_DIR$/WebServer/main.go" />
       <output_directory value="$PROJECT_DIR$/WebServer" />
-      <option name="run" value="false" />
       <method v="2" />
     </configuration>
     <configuration name="Test in yiliao/WebServer" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -103,9 +116,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/Handler/handler_login.go</url>
-          <line>18</line>
-          <option name="timeStamp" value="4" />
+          <url>file://$PROJECT_DIR$/Handler/handler_files.go</url>
+          <line>106</line>
+          <option name="timeStamp" value="28" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
