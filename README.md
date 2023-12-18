@@ -7,84 +7,39 @@
 数据库设计：
 
 ```
-表名：user_strategy
+表名：share_files
+字段：
+id : bigint unsigned 自增主键
 userId : bigint unsigned 用户ID
-strategyId : bigint unsigned 策略ID 自增主键
-sname  : char(100) # 策略名称
+fileId : bigint unsigned 文件ID
 desc : varchar(200) # 策略描述 
+target_user_id : bigint unsigned # 目标用户ID
 expire : DateTime # 过期时间 默认值为当前时间增加一天
-use_Limit : int  unsigned # 使用次数 默认值为10
+use_limit : int  unsigned # 使用次数 默认值为10
 is_delete : tinyint unsigned 是否删除 0 未删除 1 已删除 默认值为0
 gmt_create: datetime # 创建时间 默认值为当前时间
 gmt_modified : datetime # 更新时间 默认值为当前时间
 ```
 
-创建表语句：
+创建表语句：  
 
 ```SQL
-# 创建user_strategy表并在创建语句中添加注释 并且添加默认值
-CREATE TABLE `user_stragety` (
+CREATE TABLE `share_files` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
     `userId` bigint(20) unsigned NOT NULL COMMENT '用户ID',
-    `stragetyId` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '策略ID 自增主键',
-    `name` char(100) NOT NULL COMMENT '策略名称',
+    `fileId` bigint(20) unsigned NOT NULL COMMENT '文件ID',
     `desc` varchar(200) NOT NULL COMMENT '策略描述',
-    `expire` DATETIME NOT NULL default DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 DAY ) COMMENT '过期时间，默认为当前时间加一天',  
-    `use_limit` int unsigned not null default 10 comment '使用次数 默认值为10',
-    `is_delete` tinyint(3) NOT NULL DEFAULT 0 COMMENT '是否删除 0 未删除 1 已删除',
-  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间 默认当前时间',
-  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认当前时间',
-    PRIMARY KEY (`strategyId`),
-    KEY `idx_userId` (`userId`) 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户策略表';
+    `target_user_id` bigint(20) unsigned NOT NULL COMMENT '目标用户ID',
+    `expire` bigint NOT NULL default 1737302400000  COMMENT '过期时间 默认值为当前时间增加一天',
+    `use_limit` int(10) unsigned NOT NULL DEFAULT 10 COMMENT '使用次数 默认值为10',
+    `is_delete` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '是否删除 0 未删除 1 已删除 默认值为0',
+    `gmt_create` datetime NOT NULL COMMENT '创建时间 默认值为当前时间',
+    `gmt_modified` datetime NOT NULL COMMENT '更新时间 默认值为当前时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_userId` (`userId`),
+    KEY `idx_fileId` (`fileId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='分享文件表';
 ```
-
-策略规则描述（使用Json字符串进行记录，避免创建过多字段）：
-
-```json
-{
-    "strategyRule": [
-        # 设备URL  
-        {
-            "strategyName": "deviceUrl",
-            "strategyDesc": "设备URL",
-            "is_allow": 1,
-            "deviceUrl": "http://www.baidu.com"
-        },  
-        # 可访问的频率（次/秒）
-        {
-            "strategyName": "accessFrequency",
-            "strategyDesc": "可访问的频率（次/秒）",
-            "accessFrequency": 10,
-            "is_allow": 1
-        },
-        # 可访问次数
-        {
-            "strategyName": "accessCount",
-            "strategyDesc": "可访问次数",
-            "accessCount": 10,
-            "is_allow": 1,
-        },
-        # 访问时间段限制
-        {
-            "strategyName": "accessTime",
-            "strategyDesc": "访问时间段限制",
-            "accessTime": "00:00-23:59",
-            "is_allow": 1
-        },
-        # 限制使用次数
-        {
-            "strategyName": "accessCountLimit",
-            "strategyDesc": "限制使用次数",
-            "accessCountLimit": 10,
-            "is_allow": 1  
-        }
-    ]
-}  
-```
-共享策略模块设计：
-- 用户创建共享策略
-- 用户查看自己的所有以创建的共享策略
-
 ### 2. 用户管理
 
 用户表设计
@@ -128,7 +83,7 @@ CREATE TABLE `user` (
 
 ### 3.病例管理
 
-病例表设计
+病例表设计：只记录管理员上传的文件
 ```
 表名：share_files
 file_id : bigint unsigned 病例ID 自增主键
@@ -136,8 +91,6 @@ file_name : char(100) # 病例名称
 file_size : int unsigned # 病例大小
 use_count : int unsigned # 文件被使用次数 默认为0次
 owner_id : bigint unsigned # 拥有者用户ID 
-target_user_id : bigint unsigned # 目标用户ID
-share_stragety_id : bigint unsigned # 分享策略ID  
 is_delete : tinyint unsigned 是否注销 0 未删除 1 已删除 默认为0
 gmt_create: datetime # 上传时间 默认为当前时间
 gmt_modified : datetime # 更新时间 默认为当前时间
@@ -153,30 +106,28 @@ CREATE TABLE `share_files`(
   `file_size` int unsigned NOT NULL COMMENT '病例大小',
   `use_count` int unsigned NOT NULL DEFAULT 0 COMMENT '文件被使用次数',
   `owner_id` bigint unsigned NOT NULL  COMMENT '拥有者用户ID',
-  `target_user_id` bigint unsigned NOT NULL  COMMENT '目标用户ID',
-  `share_stragety_id` bigint unsigned NOT NULL  COMMENT '分享策略ID',
   `is_delete` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否注销 0 未删除 1 已删除 默认为0',
   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间 默认为当前时间',
   `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认为当前时间',
   PRIMARY KEY (`file_id`),
-  UNIQUE KEY `file_name` (`file_name`),
-  KEY `owner_id` (`owner_id`),
-  KEY `target_user_id` (`target_user_id`)
+  UNIQUE KEY `file_name` (`file_name`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='共享病例表';
 ```
 
-病例（上传）共享模块设计：
-- 上传病例（初次共享-只能由管理员进行上传）
-  - 首先上传病例，然后选择分享策略，并使用该策略进行共享
-- 共享病例（二次共享）
-  - 可以将自己的共享病例进行二次共享（自动创建最新策略与原有共享策略结合的新共享策略，并使用该策略进行共享）
-  - 用户在进行共享的时候需要选择已创建的共享策略
+## 更新项目执行流程
+- 分角色
+  - 管理员
+    - 登录
+    - 上传病例
+  - 普通用户
+    - 注册
+    - 登录
+    - 病历管理
+      - 查看病历
+        - 查看已共享与被共享病历
+      - 共享病历
+        - 创建共享策略进行共享
 
-获取当前用户的共享病例列表：
-- 用户登录后，获取当前用户的共享病例列表
-
-获取当前用户分享的病例列表：
-- 用户登录后，获取当前用户分享的病例列表
 
 ## 开发日志记录
 
@@ -218,6 +169,23 @@ CREATE TABLE `share_files`(
 12/16
 - 完成文件上传与预览功能，可以暂时完成系统的运行，基本框架完成构建
 - 规划后续任务：病历共享，围绕基本框架进行展开
+
+12/18
+- 继续完善文件共享模块，提供查看当前已共享的文件与被共享文件
+  - 完善后端接口，完善前端页面，完成基本功能
+  - 修改设计缺陷，删除文件目标用户ID,删除用户策略ID，删除用户策略表，使用共享文件表
+- 提供当前文件拥有者进行文件共享
+  - 创建共享策略
+  - 获取当前所有用户列表
+  - 初步完成用户共享文件需求
+- 发现新的问题
+  - jwt频繁验证签名，每次请求都要进行再次查看用户登录态，比较耗费性能，后续考虑进行优化
+  - 前端请求频繁导致后端无法及时响应，后续考虑引入缓存进行优化，避免频繁请求
+- 新的计划
+  - 明天完成查看当前用户共享病历与共享给当前用户病历，以及相关优化内容
+  - 打包成apk，发给老师进行检查
+  - 着手新技术，撰写毕业论文
+
 ## TODO
 **接口开发任务**
 

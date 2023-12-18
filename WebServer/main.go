@@ -58,13 +58,17 @@ func main() {
 	r.POST("/admin/upload", Handler.UploadFile(db))
 	//获取所有用户
 	r.GET("/user", Handler.GetUsersHandler(db))
-	// 创建策略
-	r.POST("/stragety/create", Handler.CreateStragety(db))
 	//获取用户所拥有的文件的列表
 	r.GET("/file", Handler.GetFileListHandler(db))
-	//下载文件
+	//下载文件进行预览
 	r.GET("/file/download", Handler.DownloadFileHandler(db))
+	// 上传文件进行文件共享
 	r.POST("/file/share", Handler.ShareFileHandler(db))
+	// 获取当前共享文件
 	r.GET("/file/share", Handler.GetShareHandler(db))
-	r.Run(":8080")
+	err = r.Run(":8080")
+	if err != nil {
+		log.Println("站口被占用")
+		return
+	}
 }

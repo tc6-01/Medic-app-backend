@@ -23,13 +23,14 @@ func ToJson(user Dao.User) string {
 // ToUser /*
 func ToUser(str string) *Dao.User {
 	var user Dao.User
-	json.Unmarshal([]byte(str), &user)
+	err := json.Unmarshal([]byte(str), &user)
+	if err != nil {
+		return nil
+	}
 	return &user
 }
 
-/*
-创建JWT令牌
-*/
+// CreateToken 签发令牌
 func CreateToken(user Dao.User) string {
 	// 设置令牌的过期时间
 	expirationTime := time.Now().Add(24 * time.Hour)
@@ -39,29 +40,28 @@ func CreateToken(user Dao.User) string {
 		将用户对象封装成Json字符串
 		使用Base64Url编码进行加密
 	*/
+	log.Println("获取用户信息中")
 	userObj := ToJson(user)
-	log.Println("userObj is :", userObj)
 	claims := &jwt.StandardClaims{
 		ExpiresAt: expirationTime.Unix(),
 		Issuer:    "your-issuer", // 可以自定义
 		Subject:   userObj,
 	}
-	fmt.Println("claims is :", claims)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
+	log.Println("正在进行签名")
 	// 使用密钥签名JWT令牌
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		log.Println(err)
 		return ""
 	}
-	log.Println("create Token :", tokenString)
+	log.Println("签名成功")
 	return tokenString
 }
 
 // ValidateToken 验证JWT令牌  ,参数为String 返回值为User
 func ValidateToken(tokenString string) (*Dao.User, error) {
-	fmt.Println("got token :", tokenString)
+	log.Println("正在解析并验证令牌")
 	// 解析JWT令牌
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
@@ -71,7 +71,6 @@ func ValidateToken(tokenString string) (*Dao.User, error) {
 	}
 	// 验证令牌是否有效
 	if !token.Valid {
-		log.Println(token)
 		return nil, fmt.Errorf("invalid token")
 	}
 
@@ -80,19 +79,11 @@ func ValidateToken(tokenString string) (*Dao.User, error) {
 	if !ok {
 		return nil, fmt.Errorf("invalid token claims")
 	}
-	fmt.Println("claims is :", claims)
 	/*
 		根据JWT中的payload获取用户结构
 	*/
 	source := claims.Subject
+	log.Println("令牌验证完毕")
 	user := ToUser(source)
 	return user, nil
-}
-
-func ConvertBoolToInt(flag bool) int {
-	if flag {
-		return 1
-	} else {
-		return 0
-	}
 }

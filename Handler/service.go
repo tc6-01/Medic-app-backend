@@ -50,6 +50,7 @@ func authenticateUser(db *sql.DB, username, password string) (string, error) {
 		Role:      roleId,
 		PublicKey: ak,
 	}
+
 	return Utils.CreateToken(user), nil
 }
 
