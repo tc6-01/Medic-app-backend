@@ -180,7 +180,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 		d := user.(*Dao.User)
 		// 执行 SQL 查询以获取当前用户共享的所有文件
 		query := `
-            SELECT files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
+            SELECT share_files.id,files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
             FROM share_files 
         	left join files on share_files.fileId = files.file_id 
             left join user on share_files.target_user_id = user.user_id
@@ -197,6 +197,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 		// 遍历查询结果并填充 sharedFiles 切片
 		for rows.Next() {
 			var (
+				id       int64
 				expire   int64
 				fileName string
 				target   string
@@ -205,7 +206,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 				fileSize int64
 			)
 
-			err := rows.Scan(&fileName, &fileSize, &target, &expire, &useLimit, &useCount)
+			err := rows.Scan(&id, &fileName, &fileSize, &target, &expire, &useLimit, &useCount)
 			if err != nil {
 				handleError(c, "DB Error", "Error scanning rows")
 				return
@@ -213,6 +214,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 
 			// 创建共享文件对象并填充数据
 			sharedFile := Dao.ShareFile{
+				Id:       id,
 				Expire:   expire,
 				FileName: fileName,
 				Target:   target,
@@ -240,7 +242,7 @@ func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
 		d := user.(*Dao.User)
 		// 执行 SQL 查询以获取当前用户共享的所有文件
 		query := `
-			SELECT files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
+			SELECT share_files.id, files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
 			FROM share_files
 			left join files on share_files.fileId = files.file_id
 			left join user on share_files.from_user_id = user.user_id
@@ -257,33 +259,48 @@ func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
 		// 遍历查询结果并填充 sharedFiles 切片
 		for rows.Next() {
 			var (
+				id       int64
 				expire   int64
 				fileName string
 				from     string
 				useCount int64
 				useLimit int64
-				fileSize int64
+				size     int64
 			)
 
-			err := rows.Scan(&fileName, &fileSize, &from, &expire, &useLimit, &useCount)
+			err := rows.Scan(&id, &fileName, &size, &from, &expire, &useLimit, &useCount)
 			if err != nil {
 				handleError(c, "DB Error", "Error scanning rows")
 				return
 			}
 
 			// 创建共享文件对象并填充数据
-			sharedFile := Dao.BeShareFile{
+			beSharedFile := Dao.BeShareFile{
+				Id:       id,
 				Expire:   expire,
 				FileName: fileName,
 				From:     from,
 				UseCount: useCount,
 				UseLimit: useLimit,
-				FileSize: fileSize,
+				FileSize: size,
 			}
 
-			sharedFiles = append(sharedFiles, sharedFile)
+			sharedFiles = append(sharedFiles, beSharedFile)
 		}
 		// 返回共享文件列表
 		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "Success", "data": sharedFiles})
+	}
+}
+
+func DeleteShareFileHandler(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		sId := c.Query("id")
+		_, err := db.Exec("DELETE from share_files where id = ?", sId)
+		if err != nil {
+			handleError(c, "DB Error", "共享记录不存在")
+			return
+		}
+		// 返回共享文件列表
+		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "共享记录删除成功", "data": ""})
 	}
 }

@@ -68,6 +68,8 @@ func main() {
 	r.GET("/file/be-share", Handler.GetBeShareHandler(db))
 	// 获取当前共享文件
 	r.GET("/file/share", Handler.GetShareHandler(db))
+	// 删除当前用户共享的病历
+	r.GET("file/shareDelete", Handler.DeleteShareFileHandler(db))
 	err = r.Run(":8080")
 	if err != nil {
 		log.Println("站口被占用")
