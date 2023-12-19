@@ -2,116 +2,68 @@
 
 ![1700312747480](image/reademe/1700312747480.png)
 
-### 1. 策略管理
+## 数据库设计
+#### 文件表
+```sql
+create table files
+(
+    file_id   bigint unsigned auto_increment comment '病例ID 自增主键'
+        primary key,
+    owner_id  bigint unsigned              not null comment '拥有者用户ID',
+    file_name char(100)                    not null comment '病例名称',
+    file_size int unsigned                 not null comment '病例大小',
+    use_count int    default 0             not null comment '文件被使用次数',
+    use_limit int    default 100           not null comment '使用次数限制，管理员上传病历默认拥有100次查看机会',
+    expire    bigint default 1737302400000 not null comment '过期时间，管理员上传的病历，可以指定其过期时间，默认为2025年1月'
+)
+    comment '共享病例表' charset = utf8;
 
-数据库设计：
+create index owner_id
+    on files (owner_id);
 
-```
-表名：share_files
-字段：
-id : bigint unsigned 自增主键
-userId : bigint unsigned 用户ID
-fileId : bigint unsigned 文件ID
-desc : varchar(200) # 策略描述 
-target_user_id : bigint unsigned # 目标用户ID
-expire : DateTime # 过期时间 默认值为当前时间增加一天
-use_limit : int  unsigned # 使用次数 默认值为10
-is_delete : tinyint unsigned 是否删除 0 未删除 1 已删除 默认值为0
-gmt_create: datetime # 创建时间 默认值为当前时间
-gmt_modified : datetime # 更新时间 默认值为当前时间
-```
-
-创建表语句：  
-
-```SQL
-CREATE TABLE `share_files` (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `userId` bigint(20) unsigned NOT NULL COMMENT '用户ID',
-    `fileId` bigint(20) unsigned NOT NULL COMMENT '文件ID',
-    `desc` varchar(200) NOT NULL COMMENT '策略描述',
-    `target_user_id` bigint(20) unsigned NOT NULL COMMENT '目标用户ID',
-    `expire` bigint NOT NULL default 1737302400000  COMMENT '过期时间 默认值为当前时间增加一天',
-    `use_limit` int(10) unsigned NOT NULL DEFAULT 10 COMMENT '使用次数 默认值为10',
-    `is_delete` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '是否删除 0 未删除 1 已删除 默认值为0',
-    `gmt_create` datetime NOT NULL COMMENT '创建时间 默认值为当前时间',
-    `gmt_modified` datetime NOT NULL COMMENT '更新时间 默认值为当前时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_userId` (`userId`),
-    KEY `idx_fileId` (`fileId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='分享文件表';
-```
-### 2. 用户管理
-
-用户表设计
 
 ```
-表名：user
-user_id : bigint unsigned 用户ID 自增主键
-user_name : char(100) # 用户名称
-password : char(100) # 用户密码
-role_id : int unsigned # 角色ID 管理员 1 普通用户 0 默认为0
-public_key : char(100) # 公钥 默认为dog
-secret_key : char(100) # 私钥 默认为dog_secret
-is_delete : tinyint unsigned 是否注销 0 未删除 1 已删除 默认为0
-gmt_create: datetime # 创建时间 默认为当前时间
-gmt_modified : datetime # 更新时间 默认为当前时间
+#### share_files 共享文件表
+```sql
+-- auto-generated definition
+create table share_files
+(
+    id             bigint unsigned auto_increment comment '主键'
+        primary key,
+    fileId         bigint unsigned                    not null comment '文件ID',
+    name           varchar(1000)                      not null comment '策略名称',
+    des            varchar(1000)                      not null comment '策略描述',
+    expire         bigint       default 1737302400000 not null comment '过期时间 默认值为当前时间增加一天',
+    from_user_id   bigint unsigned                    not null comment '当前共享用户',
+    target_user_id bigint unsigned                    not null comment '目标用户ID',
+    use_count      int          default 0             not null comment '已使用次数',
+    use_limit      int unsigned default 10            not null comment '使用次数 默认值为10'
+)
+    comment '分享文件表' charset = utf8;
+
+create index idx_fileId
+    on share_files (fileId);
+
+
 ```
+#### 用户表
+```sql
+-- auto-generated definition
+create table user
+(
+    user_id    bigint unsigned auto_increment comment '用户ID 自增主键'
+        primary key,
+    user_name  char(100)                         not null comment '用户名称',
+    password   char(100)                         not null comment '用户密码',
+    role_id    int unsigned default 0            not null comment '角色ID 管理员 1 普通用户 0 默认为0',
+    public_key char(100)    default 'dog'        not null comment '公钥 默认为dog',
+    secret_key char(100)    default 'dog_secret' not null comment '私钥 默认为dog_secret',
+    constraint user_name
+        unique (user_name)
+)
+    comment '用户表' charset = utf8;
 
-建表语句
 
-```SQL
-# 创建user表并在创建语句中添加注释并且添加默认值
-CREATE TABLE `user` (
-  `user_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '用户ID 自增主键',
-  `user_name` char(100) NOT NULL COMMENT '用户名称',
-  `password` char(100) NOT NULL COMMENT '用户密码', 
-  `role_id` int unsigned NOT NULL DEFAULT 0 COMMENT '角色ID 管理员 1 普通用户 0 默认为0',
-  `public_key` char(100) NOT NULL DEFAULT 'dog' COMMENT '公钥 默认为dog',
-  `secret_key` char(100) NOT NULL DEFAULT 'dog_secret' COMMENT '私钥 默认为dog_secret',
-  `is_delete` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否注销 0 未删除 1 已删除 默认0',
-  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间 默认当前时间',
-  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认当前时间',
-  PRIMARY KEY (`user_id`),
-  UNIQUE KEY `user_name` (`user_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
-```
-用户模块功能设计：
-- 用户注册
-- 用户登录
-- 密钥（扩充用户分享链）
-  - 重新生成公钥与私钥
-
-### 3.病例管理
-
-病例表设计：只记录管理员上传的文件
-```
-表名：share_files
-file_id : bigint unsigned 病例ID 自增主键
-file_name : char(100) # 病例名称
-file_size : int unsigned # 病例大小
-use_count : int unsigned # 文件被使用次数 默认为0次
-owner_id : bigint unsigned # 拥有者用户ID 
-is_delete : tinyint unsigned 是否注销 0 未删除 1 已删除 默认为0
-gmt_create: datetime # 上传时间 默认为当前时间
-gmt_modified : datetime # 更新时间 默认为当前时间
-```
-
-建表语句
-
-```SQL
-# 创建share_files表并在创建语句中添加注释并且添加默认值 
-CREATE TABLE `share_files`(
-  `file_id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '病例ID 自增主键',
-  `file_name` char(100) NOT NULL  COMMENT '病例名称',
-  `file_size` int unsigned NOT NULL COMMENT '病例大小',
-  `use_count` int unsigned NOT NULL DEFAULT 0 COMMENT '文件被使用次数',
-  `owner_id` bigint unsigned NOT NULL  COMMENT '拥有者用户ID',
-  `is_delete` tinyint unsigned NOT NULL DEFAULT 0 COMMENT '是否注销 0 未删除 1 已删除 默认为0',
-  `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间 默认为当前时间',
-  `gmt_modified` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间 默认为当前时间',
-  PRIMARY KEY (`file_id`),
-  UNIQUE KEY `file_name` (`file_name`)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='共享病例表';
 ```
 
 ## 更新项目执行流程
@@ -186,7 +138,18 @@ CREATE TABLE `share_files`(
   - 打包成apk，发给老师进行检查
   - 着手新技术，撰写毕业论文
 
+12/19
+- 业务问题
+  - 用户获取文件时，如果对于同一份文件共享了不同的人，这个时候有不同的共享策略，应该怎样考虑展示？
+    - 方案一，展示所有的共享内容，规定用户在进行共享时添加病历共享对象
+    - 方案二，只展示文件，不区分共享用户
+- 性能问题
+  - 打开过多MySQL连接，导致sleep进程过多，使后面无法正常执行SQL查询
+    - 解决方案：及时关闭连接
+- 进度问题
+  - 当前后端接口已经全部调试完成，前后端可实现联调
 ## TODO
+
 **接口开发任务**
 
 - [ ] 用户模块
@@ -196,17 +159,13 @@ CREATE TABLE `share_files`(
     - [x] 使用jwt记录登录态
     - [x] 验证token作为登录条件
   - [ ] 用户密钥更新
-- [ ] 策略模块
-  - [x] 共享策略设计
-    - [x] 使用Json字符串存储共享规则
-    - [x] 关联用户与共享策略
-  - [x] 共享策略创建
-  - [x] 查看当前用户的共享策略
-  - [x] 共享策略修改
-- [ ] 病例模块
-  - [x] 病例表设计
-  - [ ] 病例初次共享
-    - [ ] 使用用户公钥进行加密
-  - [ ] 病例二次共享
-    - [ ] 创建新策略，符合当前用户创建的共享策略与病例原有者的共享策略
-    - [ ] 使用当前用户公钥进行二次加密
+- [ ] 病历共享模块
+  - [x] 共享策略设计（共享文件表设计）
+    - [x] 创建多个共享策略字段
+    - [x] 关联文件，用户与策略
+  - [x] 用户进行共享病历
+  - [ ] 查看当前用户已共享的病历或者被共享的病历的共享策略（详情）
+- [x] 病历上传模块
+  - [x] 病历表设计
+  - [x] 管理员进行病历上传，将病历上传至用户
+  - [x] 病例二次共享

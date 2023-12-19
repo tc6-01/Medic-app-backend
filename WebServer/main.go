@@ -57,13 +57,15 @@ func main() {
 	// 管理员上传病历
 	r.POST("/admin/upload", Handler.UploadFile(db))
 	//获取所有用户
-	r.GET("/user", Handler.GetUsersHandler(db))
+	r.GET("/user/list", Handler.GetUsersHandler(db))
+	// 上传文件进行文件共享
+	r.POST("/user/share", Handler.ShareFileHandler(db))
 	//获取用户所拥有的文件的列表
-	r.GET("/file", Handler.GetFileListHandler(db))
+	r.GET("/file/list", Handler.GetFileListHandler(db))
 	//下载文件进行预览
 	r.GET("/file/download", Handler.DownloadFileHandler(db))
-	// 上传文件进行文件共享
-	r.POST("/file/share", Handler.ShareFileHandler(db))
+	// 获取当前用户被共享的病历
+	r.GET("/file/be-share", Handler.GetBeShareHandler(db))
 	// 获取当前共享文件
 	r.GET("/file/share", Handler.GetShareHandler(db))
 	err = r.Run(":8080")

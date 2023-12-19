@@ -15,21 +15,28 @@ type User struct {
 	PublicKey string `json:"publicKey"`
 }
 type FileListElement struct {
-	Expire    int64  `json:"expire"`
-	FileName  string `json:"fileName"`
-	FileSize  int64  `json:"fileSize"`
-	Owner     string `json:"owner"`
-	Use_count int64  `json:"use"`
-	UseLimit  int64  `json:"useLimit"`
+	Expire   int64  `json:"expire"`
+	FileName string `json:"fileName"`
+	FileSize int64  `json:"fileSize"`
+	Owner    string `json:"owner"`
+	UseCount int64  `json:"use"`
+	UseLimit int64  `json:"useLimit"`
 }
 type ShareFile struct {
-	Expire    int64  `json:"expire"`
-	FileName  string `json:"fileName"`
-	Target    string `json:"target"`
-	Use_count int64  `json:"use"`
-	UseLimit  int64  `json:"useLimit"`
-	IsGroup   int64  `json:"isGroup"`
-	FileSize  int64  `json:"fileSize"`
+	Expire   int64  `json:"expire"`
+	FileName string `json:"fileName"`
+	Target   string `json:"target"`
+	UseCount int64  `json:"use"`
+	UseLimit int64  `json:"useLimit"`
+	FileSize int64  `json:"fileSize"`
+}
+type BeShareFile struct {
+	Expire   int64  `json:"expire"`
+	FileName string `json:"fileName"`
+	From     string `json:"from"`
+	UseCount int64  `json:"use"`
+	UseLimit int64  `json:"useLimit"`
+	FileSize int64  `json:"fileSize"`
 }
 type ReceiveFile struct {
 	/*

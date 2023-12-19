@@ -57,8 +57,7 @@ func authenticateUser(db *sql.DB, username, password string) (string, error) {
 // RegisterUser 用户注册
 func RegisterUser(db *sql.DB, username, password string) error {
 	userId := 0
-	err := db.QueryRow("SELECT user_id FROM user WHERE user_name = ?", username).Scan(
-		&userId)
+	err := db.QueryRow("SELECT user_id FROM user WHERE user_name = ?", username).Scan(&userId)
 	// 如果成功查询说明用户已存在
 	if err == nil {
 		return fmt.Errorf("user already exeists")

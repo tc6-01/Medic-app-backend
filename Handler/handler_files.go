@@ -123,7 +123,7 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		}
 
 		// 查询数据库以获取指定用户的所有 PDF 文件 并获取该文件对应的病例共享策略
-		// 用户拥有的病历、被共享的病历、共享的病例
+		// 用户拥有的病历、被共享的病历
 		d := user.(*Dao.User)
 		log.Println("当前时间", time.Now().Format("2006-01-02 15:04:05"))
 		rows, err := db.Query(`select owner_id, files.expire, file_name, file_size,use_limit,use_count 
@@ -132,25 +132,19 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 			union select owner_id, share_files.expire, file_name, file_size, share_files.use_limit, share_files.use_count 
 			from files 
 			LEFT JOIN share_files ON files.file_id = share_files.fileId 
-			where share_files.target_user_id = ? or share_files.from_user_id = ?`, d.UserId, d.UserId, d.UserId)
+			where share_files.target_user_id = ? `, d.UserId, d.UserId)
+		defer rows.Close()
 		if err != nil {
 			handleError(c, "DB Error", "查询失败")
 			return
 		}
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-				handleError(c, "DB Error", "close error !")
-				return
-			}
-		}(rows)
 		log.Println("结束时间", time.Now().Format("2006-01-02 15:04:05"))
 		// 构建文件列表
 		var fileList []Dao.FileListElement // 请确保 FileListElement 结构体与数据库表的列对应
 		for rows.Next() {
 			var file Dao.FileListElement
 			var uid int64
-			err := rows.Scan(&uid, &file.Expire, &file.FileName, &file.FileSize, &file.UseLimit, &file.Use_count)
+			err := rows.Scan(&uid, &file.Expire, &file.FileName, &file.FileSize, &file.UseLimit, &file.UseCount)
 			if err != nil {
 				handleError(c, "Parser Error", "查询失败")
 				return
@@ -166,21 +160,15 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 					handleError(c, "Parser Error", "查询失败")
 				}
 			}
+			row.Close()
 			fileList = append(fileList, file)
 		}
-
-		// 检查是否有错误发生
-		if err := rows.Err(); err != nil {
-			handleError(c, "DB Error", "rows error!")
-			return
-		}
-
 		// 返回文件列表
 		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "Success", "data": fileList})
 	}
 }
 
-// GetShareHandler 获取当前用户共享的所有文件
+// GetShareHandler 获取共享病历
 func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从上下文中获取用户信息
@@ -191,19 +179,18 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 		}
 		d := user.(*Dao.User)
 		// 执行 SQL 查询以获取当前用户共享的所有文件
-		rows, err := db.Query(`
+		query := `
             SELECT files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
             FROM share_files 
         	left join files on share_files.fileId = files.file_id 
             left join user on share_files.target_user_id = user.user_id
-            WHERE from_user_id = ?`, d.UserId)
-
+            WHERE from_user_id = ?`
+		rows, err := db.Query(query, d.UserId)
+		defer rows.Close()
 		if err != nil {
 			handleError(c, "DB Error", "Database query error")
 			return
 		}
-		defer rows.Close()
-
 		// 创建一个切片来存储共享文件的信息
 		var sharedFiles []Dao.ShareFile
 
@@ -226,24 +213,77 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 
 			// 创建共享文件对象并填充数据
 			sharedFile := Dao.ShareFile{
-				Expire:    expire,
-				FileName:  fileName,
-				Target:    target,
-				Use_count: useCount,
-				UseLimit:  useLimit,
-				FileSize:  fileSize,
+				Expire:   expire,
+				FileName: fileName,
+				Target:   target,
+				UseCount: useCount,
+				UseLimit: useLimit,
+				FileSize: fileSize,
 			}
 
 			sharedFiles = append(sharedFiles, sharedFile)
 		}
+		// 返回共享文件列表
+		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "Success", "data": sharedFiles})
+	}
+}
 
-		// 检查是否有错误
-		if err := rows.Err(); err != nil {
-			handleError(c, "DB Error", "Error in rows")
+// GetBeShareHandler  获取被共享病历
+func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 从上下文中获取用户信息
+		user, exists := c.Get("user")
+		if !exists {
+			handleError(c, "Unauthorized", "当前用户未登录")
 			return
 		}
+		d := user.(*Dao.User)
+		// 执行 SQL 查询以获取当前用户共享的所有文件
+		query := `
+			SELECT files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
+			FROM share_files
+			left join files on share_files.fileId = files.file_id
+			left join user on share_files.from_user_id = user.user_id
+			WHERE target_user_id = ?`
+		rows, err := db.Query(query, d.UserId)
+		defer rows.Close()
+		if err != nil {
+			handleError(c, "DB Error", "Database query error")
+			return
+		}
+		// 创建一个切片来存储共享文件的信息
+		var sharedFiles []Dao.BeShareFile
 
+		// 遍历查询结果并填充 sharedFiles 切片
+		for rows.Next() {
+			var (
+				expire   int64
+				fileName string
+				from     string
+				useCount int64
+				useLimit int64
+				fileSize int64
+			)
+
+			err := rows.Scan(&fileName, &fileSize, &from, &expire, &useLimit, &useCount)
+			if err != nil {
+				handleError(c, "DB Error", "Error scanning rows")
+				return
+			}
+
+			// 创建共享文件对象并填充数据
+			sharedFile := Dao.BeShareFile{
+				Expire:   expire,
+				FileName: fileName,
+				From:     from,
+				UseCount: useCount,
+				UseLimit: useLimit,
+				FileSize: fileSize,
+			}
+
+			sharedFiles = append(sharedFiles, sharedFile)
+		}
 		// 返回共享文件列表
-		c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "Success", "data": sharedFiles})
+		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "Success", "data": sharedFiles})
 	}
 }
