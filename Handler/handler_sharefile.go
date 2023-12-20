@@ -67,7 +67,7 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 		} else {
 			// 存在符合条件的记录，执行更新操作,覆盖原来的策略,两个用户之间同一病历只能有一种共享策略
 			_, err = db.Exec(`UPDATE share_files 
-			SET name=?, desc=?, expire=?, use_limit=?,use_count = ? WHERE id = ?`,
+			SET name=?, des=?, expire=?, use_limit=?,use_count = ? WHERE id = ?`,
 				request.Name, request.Desc, request.Expire, request.UseLimit, 0, sId)
 			if err != nil {
 				handleError(c, "DB Error", "更新失败")
