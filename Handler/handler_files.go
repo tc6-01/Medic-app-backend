@@ -2,6 +2,7 @@ package Handler
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -19,47 +20,52 @@ func DownloadFileHandler(db *sql.DB) gin.HandlerFunc {
 		filename := c.Query("filename")
 		fmt.Println("got filename:", filename)
 		if filename == "" {
-			handleError(c, "Parser Error", "filename not transfer")
+			handleError(c, "Parser Error", "文件名传输错误")
 			return
 		}
-
+		state := c.Query("state")
+		fmt.Println("got state:", state)
+		if !(state == "owned" || state == "shared" || state == "fromShared") {
+			handleError(c, "Parser Error", "病历状态传输错误")
+			return
+		}
+		// 拥有不需要更新次数
 		// 从上下文中获取用户信息（例如，从解析的 JWT 中获取用户 ID）
-		// 如果你的用户身份验证逻辑已经在其他地方完成，可以从上下文中获取用户信息
-		_, exists := c.Get("user")
-		if !exists {
-			handleError(c, "Unauthorized", "user not found")
-			return
+		user, exist := c.Get("user")
+		if !exist {
+			handleError(c, "Unauthorized", "用户未登录")
 		}
+		d := user.(*Dao.User)
+		var id, useCount, useLimit int
+		// 被共享需要直接减去当前记录的次数  当前共享需要减去上一次共享的用户的可访问次数
+		if state == "shared" || state == "fromShared" {
+			flag := true
+			// 利用当前用户名和文件名找到共享记录
+			query := `select id, use_count, use_limit from share_files where filename = ? and target_user_id = ?`
+			err := db.QueryRow(query, filename, d.UserId).Scan(&id, &useCount, &useLimit)
+			if err != nil {
+				if errors.Is(sql.ErrNoRows, err) {
+					log.Println("No need to update")
+					flag = false
+				} else {
+					handleError(c, "DB Error", "数据库查询错误")
+					return
+				}
+			}
+			if flag {
+				if useCount >= useLimit {
+					handleError(c, "DB Error", "可访问次数已用完，请联系共享者")
+					return
+				}
+				//更新次数
+				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount+1, id)
+				if err != nil {
+					handleError(c, "DB Error", "更新访问次数错误")
+					return
+				}
+			}
 
-		//// 查询数据库以检查用户是否拥有指定文件   1. file_list用户拥有该文件  2. file_share_list用户被分享了该文件
-		//query := "SELECT owner, file_name FROM file_list WHERE owner = ? AND file_name = ? AND use_count< use_limit union SELECT owner, file_name FROM file_share_list WHERE target = ? AND file_name = ? AND use_count< use_limit"
-		//var owner string //记录一下这个文件的拥有者，根据 owner 和user 是否相同来选择更新两个数据表之一。
-		//var fileName string
-		//err := db.QueryRow(query, user, filename, user, filename).Scan(&owner, &fileName)
-		//if err != nil {
-		//	if errors.Is(sql.ErrNoRows, err) {
-		//		handleError(c, "DB Error", "File not found or limit found")
-		//		return
-		//	}
-		//	handleError(c, "DB Error", "mysql error")
-		//	return
-		//}
-		////更新次数
-		//if user == owner { //如果下载人是文件所有者，则更新 file_list表
-		//	_, err = db.Exec(`UPDATE file_list SET use_count = use_count + 1 WHERE owner = ? AND file_name = ?`,
-		//		user, fileName)
-		//	if err != nil {
-		//		handleError(c, "DB Error", "error update count")
-		//	}
-		//} else { //不是文件拥有者，则更新 fiel_share_list
-		//	_, err = db.Exec(`UPDATE file_share_list SET use_count = use_count + 1 WHERE target = ? AND file_name = ?`,
-		//		user, fileName)
-		//	if err != nil {
-		//		handleError(c, "DB Error", "error update count")
-		//	}
-		//}
-		//
-
+		}
 		// 从当前目录下读取文件
 		fileData, err := os.ReadFile("WebServer/files/" + filename)
 		if err != nil {
@@ -126,10 +132,10 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		// 用户拥有的病历、被共享的病历
 		d := user.(*Dao.User)
 		log.Println("当前时间", time.Now().Format("2006-01-02 15:04:05"))
-		rows, err := db.Query(`select owner_id, files.expire, file_name, file_size,use_limit,use_count 
+		rows, err := db.Query(`select owner_id, files.expire, file_name, file_size,use_limit,use_count,is_allow
 			from files 
 			where owner_id = ?
-			union select owner_id, share_files.expire, file_name, file_size, share_files.use_limit, share_files.use_count 
+			union select owner_id, share_files.expire, file_name, file_size, share_files.use_limit, share_files.use_count,share_files.is_allow 
 			from files 
 			LEFT JOIN share_files ON files.file_id = share_files.fileId 
 			where share_files.target_user_id = ? `, d.UserId, d.UserId)
@@ -144,7 +150,7 @@ func GetFileListHandler(db *sql.DB) gin.HandlerFunc {
 		for rows.Next() {
 			var file Dao.FileListElement
 			var uid int64
-			err := rows.Scan(&uid, &file.Expire, &file.FileName, &file.FileSize, &file.UseLimit, &file.UseCount)
+			err := rows.Scan(&uid, &file.Expire, &file.FileName, &file.FileSize, &file.UseLimit, &file.UseCount, &file.IsAllow)
 			if err != nil {
 				handleError(c, "Parser Error", "查询失败")
 				return
@@ -180,7 +186,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 		d := user.(*Dao.User)
 		// 执行 SQL 查询以获取当前用户共享的所有文件
 		query := `
-            SELECT share_files.id,files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
+            SELECT share_files.id,files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count,share_files.is_allow
             FROM share_files 
         	left join files on share_files.fileId = files.file_id 
             left join user on share_files.target_user_id = user.user_id
@@ -201,12 +207,13 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 				expire   int64
 				fileName string
 				target   string
+				isAllow  int64
 				useCount int64
 				useLimit int64
 				fileSize int64
 			)
 
-			err := rows.Scan(&id, &fileName, &fileSize, &target, &expire, &useLimit, &useCount)
+			err := rows.Scan(&id, &fileName, &fileSize, &target, &expire, &useLimit, &useCount, &isAllow)
 			if err != nil {
 				handleError(c, "DB Error", "Error scanning rows")
 				return
@@ -218,6 +225,7 @@ func GetShareHandler(db *sql.DB) gin.HandlerFunc {
 				Expire:   expire,
 				FileName: fileName,
 				Target:   target,
+				IsAllow:  isAllow,
 				UseCount: useCount,
 				UseLimit: useLimit,
 				FileSize: fileSize,
@@ -242,7 +250,7 @@ func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
 		d := user.(*Dao.User)
 		// 执行 SQL 查询以获取当前用户共享的所有文件
 		query := `
-			SELECT share_files.id, files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count
+			SELECT share_files.id, files.file_name, files.file_size, user.user_name, share_files.expire, share_files.use_limit,share_files.use_count,share_files.is_allow
 			FROM share_files
 			left join files on share_files.fileId = files.file_id
 			left join user on share_files.from_user_id = user.user_id
@@ -264,11 +272,12 @@ func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
 				fileName string
 				from     string
 				useCount int64
+				isAllow  int64
 				useLimit int64
 				size     int64
 			)
 
-			err := rows.Scan(&id, &fileName, &size, &from, &expire, &useLimit, &useCount)
+			err := rows.Scan(&id, &fileName, &size, &from, &expire, &useLimit, &useCount, &isAllow)
 			if err != nil {
 				handleError(c, "DB Error", "Error scanning rows")
 				return
@@ -280,6 +289,7 @@ func GetBeShareHandler(db *sql.DB) gin.HandlerFunc {
 				Expire:   expire,
 				FileName: fileName,
 				From:     from,
+				IsAllow:  isAllow,
 				UseCount: useCount,
 				UseLimit: useLimit,
 				FileSize: size,

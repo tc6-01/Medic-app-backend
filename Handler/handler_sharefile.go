@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"yiliao/Dao"
 )
@@ -25,6 +26,8 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			UseLimit int64  `json:"useLimit"`
 			Name     string `json:"name"`
 			Desc     string `json:"desc"`
+			IsAllow  int64  `json:"isAllow"`
+			State    string `json:"state"`
 		}
 
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -45,6 +48,34 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			handleError(c, "DB Error", "目标用户不存在")
 			return
 		}
+		var dId, useCount int64
+		flag := true
+		// 由当前用户共享的，找到共享目标用户为当前用户的共享记录进行更新，如果没有就不更新（因为如果该病历为自己的，就不需要更新）
+		if request.State == "fromShared" || request.State == "shared" {
+			query := `select id, use_count from share_files where target_user_id = ? and fileId = ?`
+			err := db.QueryRow(query, d.UserId, fileId).Scan(&dId, &useCount)
+			if err != nil {
+				if errors.Is(sql.ErrNoRows, err) {
+					log.Println("当前为病历所有者进行文件共享，不需要更新可访问次数")
+					flag = false
+				} else {
+					handleError(c, "DB Error", "数据库查询错误")
+					return
+				}
+			}
+			if flag {
+				if useCount < request.UseLimit {
+					handleError(c, "Unauthorized", "当前访问次数超出原有权限")
+					return
+				}
+				// 执行原来的记录可访问次数更新
+				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount-request.UseLimit, dId)
+				if err != nil {
+					handleError(c, "DB Error", "可访问次数更新失败")
+					return
+				}
+			}
+		}
 		// 查询是否已存在符合条件的记录
 		var sId int64
 		err = db.QueryRow(`SELECT id FROM share_files 
@@ -54,8 +85,8 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			if errors.Is(sql.ErrNoRows, err) {
 				// 不存在符合条件的记录，执行插入操作
 				_, err = db.Exec(`INSERT INTO share_files 
-    				(fileId, name, des, expire, from_user_id, target_user_id, use_limit) VALUES (?,?,?,?,?,?,?)`,
-					fileId, request.Name, request.Desc, request.Expire, d.UserId, targetId, request.UseLimit)
+    				(fileId, name, des, expire, from_user_id, target_user_id, use_limit,is_allow) VALUES (?,?,?,?,?,?,?,?)`,
+					fileId, request.Name, request.Desc, request.Expire, d.UserId, targetId, request.UseLimit, request.IsAllow)
 				if err != nil {
 					handleError(c, "DB Error", "插入失败")
 					return
@@ -67,8 +98,8 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 		} else {
 			// 存在符合条件的记录，执行更新操作,覆盖原来的策略,两个用户之间同一病历只能有一种共享策略
 			_, err = db.Exec(`UPDATE share_files 
-			SET name=?, des=?, expire=?, use_limit=?,use_count = ? WHERE id = ?`,
-				request.Name, request.Desc, request.Expire, request.UseLimit, 0, sId)
+			SET name=?, des=?, expire=?, use_limit=?,use_count = ? ,is_allow = ? WHERE id = ?`,
+				request.Name, request.Desc, request.Expire, request.UseLimit, 0, request.IsAllow, sId)
 			if err != nil {
 				handleError(c, "DB Error", "更新失败")
 				return

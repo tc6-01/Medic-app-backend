@@ -18,6 +18,7 @@ type FileListElement struct {
 	Expire   int64  `json:"expire"`
 	FileName string `json:"fileName"`
 	FileSize int64  `json:"fileSize"`
+	IsAllow  int64  `json:"isAllow"`
 	Owner    string `json:"owner"`
 	UseCount int64  `json:"use"`
 	UseLimit int64  `json:"useLimit"`
@@ -26,6 +27,7 @@ type ShareFile struct {
 	Id       int64  `json:"id"`
 	Expire   int64  `json:"expire"`
 	FileName string `json:"fileName"`
+	IsAllow  int64  `json:"isAllow"`
 	Target   string `json:"target"`
 	UseCount int64  `json:"use"`
 	UseLimit int64  `json:"useLimit"`
@@ -35,6 +37,7 @@ type BeShareFile struct {
 	Id       int64  `json:"id"`
 	Expire   int64  `json:"expire"`
 	FileName string `json:"fileName"`
+	IsAllow  int64  `json:"isAllow"`
 	From     string `json:"from"`
 	UseCount int64  `json:"use"`
 	UseLimit int64  `json:"useLimit"`
