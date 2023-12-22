@@ -41,8 +41,9 @@ func DownloadFileHandler(db *sql.DB) gin.HandlerFunc {
 		if state == "shared" || state == "fromShared" {
 			flag := true
 			// 利用当前用户名和文件名找到共享记录
-			query := `select id, use_count, use_limit from share_files where filename = ? and target_user_id = ?`
-			err := db.QueryRow(query, filename, d.UserId).Scan(&id, &useCount, &useLimit)
+			query := `select id, use_count, use_limit from share_files where  target_user_id = ? and fileId =  
+					(select file_id from files where file_name = ?)`
+			err := db.QueryRow(query, d.UserId, filename).Scan(&id, &useCount, &useLimit)
 			if err != nil {
 				if errors.Is(sql.ErrNoRows, err) {
 					log.Println("No need to update")
