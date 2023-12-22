@@ -41,10 +41,10 @@ func DownloadFileHandler(db *sql.DB) gin.HandlerFunc {
 		// 被共享需要直接减去当前记录的次数  当前共享需要减去上一次共享的用户的可访问次数
 		if state == "shared" || state == "fromShared" {
 			flag := true
-			// 利用当前用户名和文件名找到共享记录
+			// 利用当前用户名和文件名找到共享记录,增加共享发起者ID识别，避免多文件返回失败
 			query := `select id, use_count, use_limit from share_files where  target_user_id = ? and fileId =  
-					(select file_id from files where file_name = ?)`
-			err := db.QueryRow(query, d.UserId, filename).Scan(&id, &useCount, &useLimit)
+					(select file_id from files where file_name = ? and owner_id = ?)`
+			err := db.QueryRow(query, d.UserId, filename, d.UserId).Scan(&id, &useCount, &useLimit)
 			if err != nil {
 				if errors.Is(sql.ErrNoRows, err) {
 					log.Println("No need to update")
