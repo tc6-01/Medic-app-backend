@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 	"yiliao/Dao"
+
+	"github.com/gin-gonic/gin"
 )
 
 // DownloadFileHandler 提供PDF文件预览功能
@@ -109,7 +110,7 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 		// 将病历下载到服务器
-		if err := c.SaveUploadedFile(file, "webServer/files/"+name); err != nil {
+		if err := c.SaveUploadedFile(file, "WebServer/files/"+name); err != nil {
 			fmt.Printf("SaveUploadedFile,err=%v", err)
 			handleError(c, "Upload Error", "上传失败")
 			return
