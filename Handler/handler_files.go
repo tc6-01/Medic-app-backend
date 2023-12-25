@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 	"yiliao/Dao"
 
@@ -35,6 +34,7 @@ func DownloadFileHandler(db *sql.DB) gin.HandlerFunc {
 		user, exist := c.Get("user")
 		if !exist {
 			handleError(c, "Unauthorized", "用户未登录")
+			return
 		}
 		d := user.(*Dao.User)
 		var id, useCount, useLimit int
@@ -43,8 +43,8 @@ func DownloadFileHandler(db *sql.DB) gin.HandlerFunc {
 			flag := true
 			// 利用当前用户名和文件名找到共享记录,增加共享发起者ID识别，避免多文件返回失败
 			query := `select id, use_count, use_limit from share_files where  target_user_id = ? and fileId =  
-					(select file_id from files where file_name = ? and owner_id = ?)`
-			err := db.QueryRow(query, d.UserId, filename, d.UserId).Scan(&id, &useCount, &useLimit)
+					(select file_id from files where file_name = ? )`
+			err := db.QueryRow(query, d.UserId, filename).Scan(&id, &useCount, &useLimit)
 			if err != nil {
 				if errors.Is(sql.ErrNoRows, err) {
 					log.Println("No need to update")
@@ -90,21 +90,20 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 			handleError(c, "Unauthorized", "非管理员不可进行文件上传")
 			return
 		}
-		name := c.PostForm("fileName")
-		sizeStr := c.PostForm("fileSize")
-		oIdStr := c.PostForm("owner")
+		uName := c.PostForm("owner")
 		file, err := c.FormFile("files")
-		size, _ := strconv.Atoi(sizeStr)
 		var sId int64
+		// 识别文件后缀名并在之前加上用户名
+		name := "(" + uName + ")" + file.Filename
 		// 上传之后，需要添加表索引（增加文件共享记录）数据库进行更新
-		err = db.QueryRow("SELECT user_id FROM user WHERE user_name = ?", oIdStr).Scan(&sId)
+		err = db.QueryRow("SELECT user_id FROM user WHERE user_name = ?", uName).Scan(&sId)
 		if err != nil {
 			handleError(c, "DB Error", "该用户不存在")
 			return
 		}
 		// 管理员上传文件使用默认共享策略（过期时间为2025年，最大使用100次限制）
 		_, err = db.Exec("INSERT INTO files(file_name, file_size, owner_id) values (?,?,?)",
-			name, size, sId)
+			name, file.Size, sId)
 		if err != nil {
 			handleError(c, "DB Error", "文件已存在")
 			return
