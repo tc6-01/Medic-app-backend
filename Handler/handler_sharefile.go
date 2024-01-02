@@ -3,10 +3,11 @@ package Handler
 import (
 	"database/sql"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"yiliao/Dao"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ShareFileHandler 指定共享策略进行病历共享
@@ -69,7 +70,7 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 					return
 				}
 				// 执行原有记录可访问次数更新
-				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount-request.UseLimit, dId)
+				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount+request.UseLimit, dId)
 				if err != nil {
 					handleError(c, "DB Error", "可访问次数更新失败")
 					return
