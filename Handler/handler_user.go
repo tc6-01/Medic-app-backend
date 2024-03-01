@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"time"
 	"yiliao/Dao"
 )
 
@@ -23,6 +24,13 @@ func LoginHandler(db *sql.DB) gin.HandlerFunc {
 		// 验证用户登录
 		token, err := authenticateUser(db, requestBody.Username, requestBody.Password)
 		if err != nil {
+			currentTime := time.Now()
+			formattedTime := currentTime.Format("2006-01-02 15:04:05")
+			// 登陆失败更新失败用户表
+			_, err := db.Exec(`insert into t_login_fail(user_name,e_time) values(?,?)`, requestBody.Username, formattedTime)
+			if err != nil {
+				return
+			}
 			handleError(c, err.Error(), "Login failed!")
 			return
 		}

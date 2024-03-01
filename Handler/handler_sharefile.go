@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"time"
 	"yiliao/Dao"
 )
 
@@ -65,11 +66,15 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			}
 			if flag {
 				if (useLimit - useCount) < request.UseLimit {
+					currentTime := time.Now()
+					formattedTime := currentTime.Format("2006-01-02 15:04:05")
+					// 更新分享超出记录表
+					db.Exec(`insert into t_err_share(user_name,e_time,target) values(?,?,?)`, request.Name, formattedTime, request.Target)
 					handleError(c, "Unauthorized", "当前访问次数超出原有权限")
 					return
 				}
 				// 执行原有记录可访问次数更新
-				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount-request.UseLimit, dId)
+				_, err = db.Exec(`UPDATE share_files SET use_count = ? WHERE id = ?`, useCount+request.UseLimit, dId)
 				if err != nil {
 					handleError(c, "DB Error", "可访问次数更新失败")
 					return
