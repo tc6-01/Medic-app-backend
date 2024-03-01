@@ -171,3 +171,16 @@ create table user
   - [x] 病历表设计
   - [x] 管理员进行病历上传，将病历上传至用户
   - [x] 病例二次共享
+
+
+
+## Quick Start
+
+```shell
+# 使用终端运行
+go run WebServe/main.go 
+
+# 使用后台启动，可以关闭终端运行
+nohup go run WebServe/main.go &
+
+```
