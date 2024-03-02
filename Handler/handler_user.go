@@ -29,10 +29,9 @@ func LoginHandler(db *sql.DB) gin.HandlerFunc {
 			// 登陆失败更新失败用户表
 			_, err := db.Exec(`insert into t_login_fail(user_name,e_time) values(?,?)`, requestBody.Username, formattedTime)
 			if err != nil {
+				handleError(c, err.Error(), "Login failed!")
 				return
 			}
-			handleError(c, err.Error(), "Login failed!")
-			return
 		}
 		var rowId int
 		err = db.QueryRow(`select role_id from user where user_name = ?`, requestBody.Username).Scan(&rowId)

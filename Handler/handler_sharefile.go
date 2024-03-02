@@ -67,10 +67,6 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			}
 			if flag {
 				if (useLimit - useCount) < request.UseLimit {
-					currentTime := time.Now()
-					formattedTime := currentTime.Format("2006-01-02 15:04:05")
-					// 更新分享超出记录表
-					db.Exec(`insert into t_err_share(user_name,e_time,target) values(?,?,?)`, request.Name, formattedTime, request.Target)
 					handleError(c, "Unauthorized", "当前访问次数超出原有权限")
 					return
 				}
@@ -112,5 +108,16 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 			}
 		}
 		c.JSON(http.StatusOK, gin.H{"code": 200, "msg": "病历已共享"})
+	}
+}
+
+func LogErr(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		u := c.Query("user")
+		t := c.Query("target")
+		currentTime := time.Now()
+		formattedTime := currentTime.Format("2006-01-02 15:04:05")
+		// 更新分享超出记录表
+		db.Exec(`insert into t_err_share(user_name,e_time,target) values(?,?,?)`, u, formattedTime, t)
 	}
 }
