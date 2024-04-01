@@ -101,9 +101,11 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 			handleError(c, "DB Error", "该用户不存在")
 			return
 		}
+		currentTime := time.Now()
+		formattedTime := currentTime.Format("2006-01-02 15:04:05")
 		// 管理员上传文件使用默认共享策略（过期时间为2025年，最大使用100次限制）
-		_, err = db.Exec("INSERT INTO files(file_name, file_size, owner_id) values (?,?,?)",
-			name, file.Size, sId)
+		_, err = db.Exec("INSERT INTO files(file_name, file_size, creat_time, owner_id) values (?,?,?,?)",
+			name, file.Size, formattedTime, sId)
 		if err != nil {
 			handleError(c, "DB Error", "文件已存在")
 			return
