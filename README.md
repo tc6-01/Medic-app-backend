@@ -3,28 +3,8 @@
 ![1700312747480](image/reademe/1700312747480.png)
 
 ## 数据库设计
-#### 文件表
 ```sql
-create table files
-(
-    file_id   bigint unsigned auto_increment comment '病例ID 自增主键'
-        primary key,
-    owner_id  bigint unsigned              not null comment '拥有者用户ID',
-    file_name char(100)                    not null comment '病例名称',
-    file_size int unsigned                 not null comment '病例大小',
-    use_count int    default 0             not null comment '文件被使用次数',
-    use_limit int    default 100           not null comment '使用次数限制，管理员上传病历默认拥有100次查看机会',
-    expire    bigint default 1737302400000 not null comment '过期时间，管理员上传的病历，可以指定其过期时间，默认为2025年1月'
-)
-    comment '共享病例表' charset = utf8;
-
-create index owner_id
-    on files (owner_id);
-
-
-```
-#### share_files 共享文件表
-```sql
+-- 分享文件表 
 -- auto-generated definition
 create table share_files
 (
@@ -37,17 +17,58 @@ create table share_files
     from_user_id   bigint unsigned                    not null comment '当前共享用户',
     target_user_id bigint unsigned                    not null comment '目标用户ID',
     use_count      int          default 0             not null comment '已使用次数',
-    use_limit      int unsigned default 10            not null comment '使用次数 默认值为10'
+    use_limit      int unsigned default 10            not null comment '使用次数 默认值为10',
+    is_allow       tinyint      default 0             not null comment '允许目标用户进行传播,默认不允许'
 )
     comment '分享文件表' charset = utf8;
 
 create index idx_fileId
     on share_files (fileId);
-
-
 ```
-#### 用户表
+
 ```sql
+-- 共享病例表 
+-- auto-generated definition
+create table files
+(
+    file_id   bigint unsigned auto_increment comment '病例ID 自增主键'
+        primary key,
+    owner_id  bigint unsigned               not null comment '拥有者用户ID',
+    file_name char(100)                     not null comment '病例名称',
+    file_size int unsigned                  not null comment '病例大小',
+    use_count int     default 0             not null comment '文件被使用次数',
+    use_limit int     default 100           not null comment '使用次数限制，管理员上传病历默认拥有100次查看机会',
+    expire    bigint  default 1737302400000 not null comment '过期时间，管理员上传的病历，可以指定其过期时间，默认为2025年1月',
+    is_allow  tinyint default 1             not null comment '允许进行二次传播，默认文件拥有者可以进行传播'
+)
+    comment '共享病例表' charset = utf8;
+
+create index owner_id
+    on files (owner_id);
+```
+```sql
+-- 超过分享次数的分享记录 
+-- auto-generated definition
+create table t_err_share
+(
+    user_name varchar(30) null comment '用户名',
+    e_time    datetime    null comment '分享时间',
+    target    varchar(30) null comment '分享目标'
+)
+    comment '超过分享次数的分享记录' charset = utf8;
+```
+```sql
+ -- 登录失败 
+-- auto-generated definition
+create table t_login_fail
+(
+  user_name char(30) null comment '用户名',
+  e_time    datetime null comment '登录时间'
+)
+  comment '登录失败' charset = utf8;
+```
+```sql
+-- 用户表 
 -- auto-generated definition
 create table user
 (
@@ -62,10 +83,7 @@ create table user
         unique (user_name)
 )
     comment '用户表' charset = utf8;
-
-
 ```
-
 ## 更新项目执行流程
 - 分角色
   - 管理员
