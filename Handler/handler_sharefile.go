@@ -89,10 +89,11 @@ func ShareFileHandler(db *sql.DB) gin.HandlerFunc {
 				currentTime := time.Now()
 				formattedTime := currentTime.Format("2006-01-02 15:04:05")
 				_, err = db.Exec(`INSERT INTO share_files 
-    				(fileId, name, des, expire, creat_time,from_user_id, target_user_id, use_limit,is_allow) VALUES (?,?,?,?,?,?,?,?)`,
+    				(fileId, name, des, expire, creat_time,from_user_id, target_user_id, use_limit,is_allow) VALUES (?,?,?,?,?,?,?,?,?)`,
 					fileId, request.Name, request.Desc, request.Expire, formattedTime, d.UserId, targetId, request.UseLimit, request.IsAllow)
 				if err != nil {
 					handleError(c, "DB Error", "插入失败")
+					log.Println(err)
 					return
 				}
 			} else {
