@@ -105,11 +105,7 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 		formattedTime := currentTime.Format("2006-01-02 15:04:05")
 		// 上传之前查看是否原有文件已存在,如果存在就直接更新
 		err = db.QueryRow("SELECT file_id FROM files WHERE file_name = ?", name).Scan(&fId)
-		log.Println(fId)
-		if err != nil {
-			handleError(c, "DB Error", "查询病历失败")
-			return
-		}
+		log.Println("查询到已上传病历ID：",fId)
 		if fId > 0 {
 			_, err = db.Exec("UPDATE files SET file_size = ?, creat_time = ?, owner_id = ? WHERE file_id = ?",
 			file.Size, formattedTime, sId, fId)
