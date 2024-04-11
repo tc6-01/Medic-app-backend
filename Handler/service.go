@@ -55,7 +55,7 @@ func authenticateUser(db *sql.DB, username, password string) (string, error) {
 }
 
 // RegisterUser 用户注册
-func RegisterUser(db *sql.DB, username, password string) error {
+func RegisterUser(db *sql.DB, username, password string, role string) error {
 	userId := 0
 	err := db.QueryRow("SELECT user_id FROM user WHERE user_name = ?", username).Scan(&userId)
 	// 如果成功查询说明用户已存在
@@ -65,7 +65,7 @@ func RegisterUser(db *sql.DB, username, password string) error {
 	password += "yiliao"
 	hashedPassword := cryptoPass(password)
 	// 向数据库中插入用户
-	_, err = db.Exec("insert into user(user_name,password) values(?,?)", username, hashedPassword)
+	_, err = db.Exec("insert into user(user_name,password,role) values(?,?,?)", username, hashedPassword, role)
 	if err != nil {
 		log.Println("插入数据库失败")
 		return err

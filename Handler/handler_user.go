@@ -53,6 +53,7 @@ func RegisterHandler(db *sql.DB) gin.HandlerFunc {
 		var requestBody struct {
 			Username      string `json:"username"`
 			Password      string `json:"password"`
+			Role          string `json:"role"`
 			RetryPassword string `json:"retry_password"`
 		}
 
@@ -64,7 +65,7 @@ func RegisterHandler(db *sql.DB) gin.HandlerFunc {
 			handleError(c, "Register Error", "password not match")
 			return
 		}
-		err := RegisterUser(db, requestBody.Username, requestBody.Password)
+		err := RegisterUser(db, requestBody.Username, requestBody.Password, requestBody.Role)
 		if err != nil {
 			handleError(c, err.Error(), "Register Failed")
 			return
