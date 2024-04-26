@@ -10,6 +10,9 @@ WebServer/build/
 # 忽略.git
 .git/
 
+# 忽略日志文件
+nohuo.out
+
 # 忽略.idea
 .idea/
 
