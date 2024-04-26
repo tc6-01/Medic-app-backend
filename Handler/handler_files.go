@@ -105,10 +105,11 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 		formattedTime := currentTime.Format("2006-01-02 15:04:05")
 		// 上传之前查看是否原有文件已存在,如果存在就直接更新
 		err = db.QueryRow("SELECT file_id FROM files WHERE file_name = ?", name).Scan(&fId)
-		log.Println("查询到已上传病历ID：",fId)
+		log.Println("查询到已上传病历ID：", fId)
+		// 查询表中的记录是为了防止出现多个记录导致无法查看实际的文件
 		if fId > 0 {
 			_, err = db.Exec("UPDATE files SET file_size = ?, creat_time = ?, owner_id = ? WHERE file_id = ?",
-			file.Size, formattedTime, sId, fId)
+				file.Size, formattedTime, sId, fId)
 			if err != nil {
 				log.Println(err)
 				handleError(c, "DB Error", "数据库更新失败")
@@ -117,17 +118,17 @@ func UploadFile(db *sql.DB) gin.HandlerFunc {
 		} else {
 			// 管理员上传文件使用默认共享策略（过期时间为2025年，最大使用100次限制）
 			_, err = db.Exec("INSERT INTO files(file_name, file_size, creat_time, owner_id) values (?,?,?,?)",
-			name, file.Size, formattedTime, sId)
+				name, file.Size, formattedTime, sId)
 			if err != nil {
 				handleError(c, "DB Error", "数据库更新失败")
 				return
 			}
-			// 将病历下载到服务器
-			if err := c.SaveUploadedFile(file, "WebServer/files/"+name); err != nil {
-				fmt.Printf("SaveUploadedFile,err=%v", err)
-				handleError(c, "Upload Error", "上传失败")
-				return
-			}
+		}
+		// 将病历下载到服务器
+		if err := c.SaveUploadedFile(file, "WebServer/files/"+name); err != nil {
+			fmt.Printf("SaveUploadedFile,err=%v", err)
+			handleError(c, "Upload Error", "上传失败")
+			return
 		}
 		c.JSON(http.StatusOK, gin.H{"code": "200", "msg": "文件已上传"})
 	}
